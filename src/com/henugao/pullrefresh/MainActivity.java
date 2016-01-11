@@ -32,7 +32,6 @@ public class MainActivity extends Activity {
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		setContentView(R.layout.activity_main);
 		refreshListView = (RefreshListView) findViewById(R.id.refreshListView);
-		
 	}
 	//初始化数据
 	private void initData() {
@@ -42,6 +41,7 @@ public class MainActivity extends Activity {
 		}
 		MyAdapter adapter = new MyAdapter();
 		refreshListView.setAdapter(adapter);
+
 	}
 	
 	class MyAdapter extends BaseAdapter {
