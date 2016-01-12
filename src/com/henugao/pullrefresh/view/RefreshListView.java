@@ -4,22 +4,25 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import com.henugao.pullrefresh.R;
-
+import android.widget.AbsListView.OnScrollListener;
 import android.content.Context;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.RotateAnimation;
+import android.widget.AbsListView;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-public class RefreshListView extends ListView {
+public class RefreshListView extends ListView implements OnScrollListener {
 	
 	
 	private View headerView;  //头部的刷新视图	
+	private View footerView;  //底部加载更多的视图
 	private ImageView ivArrow;
 	private ProgressBar pbRoate;
 	private TextView tvState;
@@ -27,15 +30,16 @@ public class RefreshListView extends ListView {
 	private RotateAnimation upAnimation,downAnimation; //向上旋转和向下旋转动画
 	
 	private int headerHeight; //头部的高度
+	private int footerHeight; //底部的高度
 	private int downY; // 
+	
 	
 	private final int PULL_REFRESH = 0;   //下拉刷新
 	private final int RELEASE_RAEFRESH = 1; //松开刷新
 	private final int REFRESHING = 2; //正在刷新
 	private int currentLevel = PULL_REFRESH; // 当前的状态
-
-
-
+	
+	private boolean isLodingMore = false;  //判断是否正在加载更多数据
 
 	public RefreshListView(Context context) {
 		super(context);
@@ -50,7 +54,9 @@ public class RefreshListView extends ListView {
 	}
 
 	private void init() {
+		setOnScrollListener(this);
 		initHeaderView();
+		initFooterView();
 		initRotateAnimation();
 		
 	}
@@ -69,7 +75,6 @@ public class RefreshListView extends ListView {
 				Animation.RELATIVE_TO_SELF, 0.5f);
 		downAnimation.setFillAfter(true);
 		downAnimation.setDuration(300);
-		
 	}
 
 
@@ -88,6 +93,18 @@ public class RefreshListView extends ListView {
 		headerView.setPadding(0, -headerHeight, 0, 0); //通过设置padding隐藏headerview
 		//必须在setAdapter之前调用
 		addHeaderView(headerView);
+	}
+	
+	/**
+	 * 初始化底部的加载更多的布局
+	 */
+	public void initFooterView() {
+		footerView = View.inflate(getContext(), R.layout.layout_footer, null);
+		footerView.measure(0, 0);//主动通知系统去测量
+		footerHeight = footerView.getMeasuredHeight();
+		footerView.setPadding(0, -footerHeight, 0, 0); //通过设置padding隐藏headerview
+		//必须在setAdapter之前调用
+		addFooterView(footerView);
 	}
 	
 	@Override
@@ -165,12 +182,19 @@ public class RefreshListView extends ListView {
 	 * 完成刷新后调用，重置状态,在你获取完数据更新完adapter之后，在UI线程中调用该方法
 	 */
 	public void completeRefresh() {
-		tvState.setText("下拉刷新");
-		currentLevel = PULL_REFRESH;
-		tvDate.setText("最后刷新：" + getCurrentTime());
-		pbRoate.setVisibility(View.INVISIBLE);
-		ivArrow.setVisibility(View.VISIBLE);
-		headerView.setPadding(0, -headerHeight, 0, 0);
+		if (isLodingMore) {
+			//重置加载更多视图为不可见
+			footerView.setPadding(0, -footerHeight, 0, 0);
+			isLodingMore = false;
+		}else {
+			tvState.setText("下拉刷新");
+			currentLevel = PULL_REFRESH;
+			tvDate.setText("最后刷新：" + getCurrentTime());
+			pbRoate.setVisibility(View.INVISIBLE);
+			ivArrow.setVisibility(View.VISIBLE);
+			headerView.setPadding(0, -headerHeight, 0, 0);
+		}
+
 	}
 	
 	/**
@@ -184,10 +208,39 @@ public class RefreshListView extends ListView {
 	}
 	
 	RefreshListener listener;
+
 	public void setOnRefreshListener(RefreshListener listener){
 		this.listener = listener;
 	}
 	public interface RefreshListener {
 		void onPullRefresh();
+		void onLoadMore();
+	}
+	/**scroolState的三种可能取值
+	 * SCROLL_STATE_IDLE //表示手指松开
+	 * SCROLL_STATE_TOUCH_SCROLL //表示手指按住滚动
+	 * SCROLL_STATE_FLING //表示惯性滚动
+	 */
+	@Override
+	public void onScrollStateChanged(AbsListView view, int scrollState) {
+		if (scrollState == OnScrollListener.SCROLL_STATE_IDLE && 
+				getLastVisiblePosition() == (getCount() - 1) &&
+				!isLodingMore) {
+			isLodingMore = true;
+			footerView.setPadding(0, 0, 0, 0); //设置加载更多视图可见
+			setSelection(getCount());
+			if (listener != null) {
+				listener.onLoadMore();
+			}
+		}
+	}
+
+
+
+	@Override
+	public void onScroll(AbsListView view, int firstVisibleItem,
+			int visibleItemCount, int totalItemCount) {
+		// TODO Auto-generated method stub
+		
 	}
 }

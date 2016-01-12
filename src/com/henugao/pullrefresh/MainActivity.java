@@ -61,7 +61,13 @@ public class MainActivity extends Activity {
 			@Override
 			public void onPullRefresh() {
 				//执行下拉刷新的操作：(可以定义一些自己想要的操作)比如说从远端服务器请求数据,
-				requestData();
+				requestData(false);
+			}
+
+			@Override
+			public void onLoadMore() {
+				// TODO Auto-generated method stub
+				requestData(true);
 			}
 		});
 
@@ -70,11 +76,17 @@ public class MainActivity extends Activity {
 	/**
 	 * 模拟向服务器请求数据
 	 */
-	public void requestData() {
+	public void requestData(final boolean isLoadingMore) {
 		new Thread(){
 			public void run() {
 				SystemClock.sleep(3000);
-				list.add(0,"从服务器请求的数据");
+				if (isLoadingMore) {
+					list.add("加载更多数据-0");
+					list.add("加载更多数据-1");
+				}else {
+					list.add(0,"从服务器请求的数据");
+				}
+		
 				handler.sendEmptyMessage(0);
 			};
 		}.start();
