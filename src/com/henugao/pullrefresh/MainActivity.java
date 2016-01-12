@@ -36,7 +36,7 @@ public class MainActivity extends Activity {
 	//初始化数据
 	private void initData() {
 		list = new ArrayList<String>();
-		for (int i = 0; i < 15; i++) {
+		for (int i = 0; i < 30; i++) {
 			list.add("原来的数据：" + i);
 		}
 		MyAdapter adapter = new MyAdapter();
