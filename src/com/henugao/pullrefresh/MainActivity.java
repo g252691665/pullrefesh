@@ -4,8 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.henugao.pullrefresh.view.RefreshListView;
+import com.henugao.pullrefresh.view.RefreshListView.RefreshListener;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.SystemClock;
 import android.app.Activity;
 import android.view.Menu;
 import android.view.View;
@@ -19,6 +22,18 @@ public class MainActivity extends Activity {
 	
 	private RefreshListView refreshListView;
 	private List<String> list;
+	private MyAdapter adapter;
+	
+	private Handler handler = new Handler(){
+		public void handleMessage(android.os.Message msg) {
+			//更新listview
+			adapter.notifyDataSetChanged();
+			//完成下拉刷新
+			refreshListView.completeRefresh();
+		}
+	};
+	
+
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -39,11 +54,31 @@ public class MainActivity extends Activity {
 		for (int i = 0; i < 30; i++) {
 			list.add("原来的数据：" + i);
 		}
-		MyAdapter adapter = new MyAdapter();
+		adapter = new MyAdapter();
 		refreshListView.setAdapter(adapter);
+		refreshListView.setOnRefreshListener(new RefreshListener() {
+			
+			@Override
+			public void onPullRefresh() {
+				//执行下拉刷新的操作：(可以定义一些自己想要的操作)比如说从远端服务器请求数据,
+				requestData();
+			}
+		});
 
 	}
 	
+	/**
+	 * 模拟向服务器请求数据
+	 */
+	public void requestData() {
+		new Thread(){
+			public void run() {
+				SystemClock.sleep(3000);
+				list.add(0,"从服务器请求的数据");
+				handler.sendEmptyMessage(0);
+			};
+		}.start();
+	}
 	class MyAdapter extends BaseAdapter {
 
 		@Override

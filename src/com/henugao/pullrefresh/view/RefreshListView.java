@@ -1,5 +1,8 @@
 package com.henugao.pullrefresh.view;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import com.henugao.pullrefresh.R;
 
 import android.content.Context;
@@ -94,6 +97,10 @@ public class RefreshListView extends ListView {
 			downY = (int) ev.getY();
 			break;
 		case MotionEvent.ACTION_MOVE:
+			//判断当前是否正处于刷新状态，是的话就不能再下拉刷新了
+			if (currentLevel == REFRESHING) {
+				break;
+			}
 			int deltaY = (int) (ev.getY() - downY);
 			int pendingTop = -headerHeight + deltaY;
 			if (pendingTop > -headerHeight && getFirstVisiblePosition() == 0) {
@@ -117,6 +124,10 @@ public class RefreshListView extends ListView {
 				headerView.setPadding(0, 0, 0, 0);
 				currentLevel = REFRESHING;
 				refreshHeader();
+				if (listener != null) {
+					listener.onPullRefresh();
+				}
+				
 			}
 			break;
 
@@ -148,5 +159,35 @@ public class RefreshListView extends ListView {
 		default:
 			break;
 		}
+	}
+	
+	/**
+	 * 完成刷新后调用，重置状态,在你获取完数据更新完adapter之后，在UI线程中调用该方法
+	 */
+	public void completeRefresh() {
+		tvState.setText("下拉刷新");
+		currentLevel = PULL_REFRESH;
+		tvDate.setText("最后刷新：" + getCurrentTime());
+		pbRoate.setVisibility(View.INVISIBLE);
+		ivArrow.setVisibility(View.VISIBLE);
+		headerView.setPadding(0, -headerHeight, 0, 0);
+	}
+	
+	/**
+	 * 获取当前的时间
+	 * @return
+	 */
+	private String getCurrentTime() {
+		SimpleDateFormat sdf = new SimpleDateFormat("yy-MM-dd HH:mm:ss");
+		String currenTime = sdf.format(new Date());
+		return currenTime;
+	}
+	
+	RefreshListener listener;
+	public void setOnRefreshListener(RefreshListener listener){
+		this.listener = listener;
+	}
+	public interface RefreshListener {
+		void onPullRefresh();
 	}
 }

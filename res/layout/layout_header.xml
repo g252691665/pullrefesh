@@ -50,7 +50,7 @@
             android:id="@+id/tv_date"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="最后刷新"
+            android:text="最后刷新:"
             android:textColor="#a666"
             android:textSize="10sp" />
     </LinearLayout>
